@@ -1,0 +1,46 @@
+def create_cookbook():
+  cook_book = {}
+  with open('recipes.txt') as f:
+    for line in f:
+      ingridient = []
+      dish = line.strip()
+      quantity_ingridients = f.readline().strip()
+      for i in range(int(quantity_ingridients)):
+        a = f.readline().strip()
+        a = a.split(' | ')
+        ingridient_dict = {
+          'ingridient_name': a[0],
+          'quantity': int(a[1]),
+          'measure': a[2]
+          }
+        ingridient.append(ingridient_dict)
+      f.readline()
+      cook_book.update({dish: ingridient})
+    print(cook_book)
+  return cook_book
+
+create_cookbook()
+
+def get_shop_list_by_dishes(dishes, person_count):
+  cook_book = create_cookbook()
+  list_dish = list(cook_book.keys())
+  ingridients = {}
+  for item in dishes:
+    for dish in list_dish:
+      if item == dish:
+        list_ingridients = cook_book[dish]
+        for items in list_ingridients:
+          ingridients_dict = {
+            items['ingridient_name']: {'measure': items['measure'], 'quantity': (items['quantity']) * person_count}
+            }
+          if items['ingridient_name'] in ingridients:
+            quantity = ingridients[items['ingridient_name']]
+            new_quantity = quantity['quantity'] + (items['quantity'] * person_count)
+            ingridients_dict  = {
+              items['ingridient_name']: {'measure': items['measure'], 'quantity': new_quantity}
+            }
+          ingridients.update(ingridients_dict)
+  print(ingridients)
+  return ingridients
+
+get_shop_list_by_dishes(['Запеченный картофель', 'Омлет'], 2)
