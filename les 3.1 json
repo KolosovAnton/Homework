@@ -4,22 +4,23 @@ from pprint import pprint
 def common_words():
   with open('newsafr.json', encoding="utf_8") as datafile:
     json_data = json.load(datafile)
-    list_word = []
-    for item in json_data["rss"]["channel"]["items"]:
-      news_str = item["description"].split()
-      for word in news_str:
-        if len(word) >= 6:
-          list_word.append(word.lower())
-    dict_word = {}
-    for i in range(0, len(list_word)):
-      a = {list_word[i]: list_word.count(list_word[i])}
-      dict_word.update(a)
-    list_dict_word = list(dict_word.items())
-    list_dict_word.sort(key=lambda i: i[1])
-    list_dict_word.reverse()
-    list_common_words = []
-    for item_list in list_dict_word:
-      list_common_words.append(item_list[0])
-    pprint(list_common_words[:10])
+  list_word = []
+  for item in json_data["rss"]["channel"]["items"]:
+    news_str = item["description"].split()
+    for word in news_str:
+      if len(word) >= 6:
+        list_word.append(word.lower())
+  dict_word = {}
+  for i in range(0, len(list_word)):
+    a = {list_word[i]: list_word.count(list_word[i])}
+    dict_word.update(a)
+  list_dict_word = list(dict_word.items())
+  def sortByLength(list_dict_word):
+    return list_dict_word[1]
+  list_dict_word.sort(key=sortByLength, reverse=True)
+  list_common_words = []
+  for item_list in list_dict_word:
+    list_common_words.append(item_list[0])
+  pprint(list_common_words[:10])
 
 common_words()
