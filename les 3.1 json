@@ -15,9 +15,9 @@ def common_words():
     a = {list_word[i]: list_word.count(list_word[i])}
     dict_word.update(a)
   list_dict_word = list(dict_word.items())
-  def sortByLength(list_dict_word):
+  def sortByQuantity(list_dict_word):
     return list_dict_word[1]
-  list_dict_word.sort(key=sortByLength, reverse=True)
+  list_dict_word.sort(key=sortByQuantity, reverse=True)
   list_common_words = []
   for item_list in list_dict_word:
     list_common_words.append(item_list[0])
