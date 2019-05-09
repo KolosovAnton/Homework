@@ -1,0 +1,61 @@
+import requests
+import os
+
+def translating():
+    address_doc = input('Введите путь к документу, который надо перевести: ')
+    lang = input('Введите с какого языка переводим (в виде - de, fr, es): ')
+    to_lang = input('Введите на какой язык переводим (в виде - ru, de, fr, es): ')
+
+    working_directory_path = os.getcwd()
+    os.chdir(f'{address_doc}')
+
+    if lang == 'de':
+        name_doc = 'DE.txt'
+    elif lang == 'es':
+        name_doc = 'ES.txt'
+    elif lang == 'fr':
+        name_doc = 'FR.txt'
+    else:
+        print('Уточните язык')
+
+    with open(f'{name_doc}', encoding='utf_8') as f:
+        text = f.read()
+
+    API_KEY = 'trnsl.1.1.20190508T112551Z.07ad023895430789.09b15005501f1f9edb1c1c725604d950c82db3fd'
+    # API_KEY = 'trnsl.1.1.20161025T233221Z.47834a66fd7895d0.a95fd4bfde5c1794fa433453956bd261eae80152'
+    URL = 'https://translate.yandex.net/api/v1.5/tr.json/translate'
+
+    def translate_it(text, lang, to_lang='ru'):
+        """
+    https://translate.yandex.net/api/v1.5/tr.json/translate ?
+    key=<API-ключ>
+     & text=<переводимый текст>
+     & lang=<направление перевода>
+     & [format=<формат текста>]
+     & [options=<опции перевода>]
+     & [callback=<имя callback-функции>]
+    :param to_lang:
+    :return:
+    """
+
+        params = {
+            'key': API_KEY,
+            'text': text,
+            'lang': '{}-{}'.format(lang, to_lang),
+            }
+
+        response = requests.get(URL, params=params)
+        json_ = response.json()
+        return ''.join(json_['text'])
+
+    address_translate = input('Введите путь к документу, в котором будет храниться перевод: ')
+    os.chdir(f'{address_translate}')
+
+    with open(f'translation_{lang}-{to_lang}.txt', 'w') as f:
+        translation = translate_it(text, f'{lang}', f'{to_lang}')
+        f.write(translation + '\n')
+        f.write('Переведено сервисом «Яндекс.Переводчик» http://translate.yandex.ru/')
+
+    os.chdir(f'{working_directory_path}')
+
+translating()
