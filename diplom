@@ -1,9 +1,7 @@
 import requests
-from urllib.parse import urlencode
-from pprint import pprint
+# from urllib.parse import urlencode
 import json
 import time
-import sys
 
 APP_ID = 6984668
 BASE_URL = 'https://oauth.vk.com/authorize'
@@ -12,13 +10,15 @@ auth_data = {
     'client_id': APP_ID,
     'display': 'page',
     'scope': 262146,
+    # 'friends' + 'groups' (https://vk.com/dev/permissions)
     'response_type': 'token',
     'v': '5.95'
 }
 
 # print('?'.join((BASE_URL, urlencode(auth_data))))
 
-TOKEN = '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1'
+# TOKEN = '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1'
+TOKEN = '44b2f70da0e37bdf719a01f6304cdf59db580d0089955442bf2b61817313556c66463a868177f2d798c74'
 
 user_name = input('Введите имя пользователя или его id: ')
 # user_name = 'eshmargunov'
@@ -58,6 +58,21 @@ class User:
             v='5.95'
         )
 
+    def get_friends(self):
+        params = self.get_params()
+        response = requests.get(
+            'https://api.vk.com/method/friends.get',
+            params
+        )
+        try:
+            print('Получение списка друзей пользователя https://vk.com/id{}'.format(self.user_id))
+            user_friends = response.json()['response']['items']
+        except KeyError:
+            print('Пользователь https://vk.com/id{} ограничил доступ к своим друзьям,'
+                  ' удален или заблокирован'.format(self.user_id))
+        else:
+            return user_friends
+
     def get_groups(self):
         params = self.get_params()
         response = requests.get(
@@ -65,115 +80,118 @@ class User:
             params
         )
         try:
-            print('Получение списка групп пользователя https://vk.com/id{}'.format(self.user_id))
             user_groups = response.json()['response']['items']
+            print('Получение списка групп пользователя https://vk.com/id{}'.format(self.user_id))
         except KeyError:
             print('Пользователь https://vk.com/id{} ограничил доступ к своим группам,'
-                  'удален или заблокирован'.format(self.user_id))
-            sys.exit()
-        return user_groups
-
-    def get_members(self):
-        user_groups = self.get_groups()
-        count_user = []
-        for i in range(len(user_groups)):
-            params = {
-                'filter': 'friends',
-                'group_id': str(user_groups[i])
-            }
-            params.update(self.get_params())
-            time.sleep(0.4)
-            response = requests.get(
-                'https://api.vk.com/method/groups.getMembers',
-                params
-            )
-            print('Получение информации о количестве друзей пользователя, состоящих в группе https://vk.com/public{}'.format(user_groups[i]))
-            try:
-                list_count_user = (
-                    user_groups[i], response.json()['response']['count']
-                )
-                count_user.append(list_count_user)
-            except KeyError:
-                list_count_user = (
-                    user_groups[i], 'Сообщество заблокировано!'
-                )
-                count_user.append(list_count_user)
-        return count_user
+                  ' удален или заблокирован'.format(self.user_id))
+        else:
+            return user_groups
 
     def differences_groups(self):
-        list_count_user = self.get_members()
+        user_friends = self.get_friends()
+        time.sleep(0.5)
+        user_groups = set(self.get_groups())
+        groups_friends = set()
+        quantity = 0
+        for friend in user_friends:
+            time.sleep(0.5)
+            self.user_id = friend
+            try:
+                groups_friend = self.get_groups()
+                groups_friends.update(set(groups_friend))
+            except TypeError:
+                quantity += 1
+        time.sleep(0.5)
+        differences_groups = list(user_groups.difference(groups_friends))
         list_differences_groups = []
-        for i in range(len(list_count_user)):
-            if list_count_user[i][1] == 0:
-                params = {
-                    'group_id': list_count_user[i][0],
-                    'fields': 'members_count'
+        time.sleep(0.5)
+        for group in differences_groups:
+            time.sleep(0.5)
+            params = {
+                'group_id': group,
+                'fields': 'members_count'
+            }
+            params.update(self.get_params())
+            response = requests.get(
+                'https://api.vk.com/method/groups.getById',
+                params
+            )
+            print('Получение информации о группе https://vk.com/public{},'
+                  ' в которой состоит только пользователь'.format(group))
+            try:
+                information_group = response.json()['response'][0]
+                dict_differences_groups = {
+                    'name': information_group['name'],
+                    'gid': information_group['id'],
+                    'members_count': information_group['members_count'],
                 }
-                params.update(self.get_params())
-                time.sleep(0.4)
-                response = requests.get(
-                    'https://api.vk.com/method/groups.getById',
-                    params
-                )
-                print('Создание списка групп и получение данных этих групп пользователя'
-                      ' https://vk.com/id{}, в которых нет его друзей'.format(self.user_id))
-                information_groups = response.json()['response'][0]
-                try:
-                    dict_differences_groups = {
-                        'name': information_groups['name'],
-                        'gid': information_groups['id'],
-                        'members_count': information_groups['members_count'],
-                    }
-                    list_differences_groups.append(dict_differences_groups)
-                except KeyError:
-                    dict_differences_groups = {
-                        'name': information_groups['name'],
-                        'gid': information_groups['id'],
-                        'members_count': 'Сообщество заблокировано!',
-                    }
-                    list_differences_groups.append(dict_differences_groups)
-            with open('groups.json', 'w', encoding='utf-8') as f:
-                json.dump(list_differences_groups, f, ensure_ascii=False, indent=2)
+                list_differences_groups.append(dict_differences_groups)
+            except KeyError:
+                dict_differences_groups = {
+                    'name': information_group['name'],
+                    'gid': information_group['id'],
+                    'members_count': '[no data]',
+                }
+                list_differences_groups.append(dict_differences_groups)
+        print('У {} пользователя(ей) не получен список групп'.format(quantity))
+        with open('groups.json', 'w', encoding='utf-8') as f:
+            json.dump(list_differences_groups, f, ensure_ascii=False, indent=2)
         return
 
     def common_groups(self):
-        list_count_user = self.get_members()
+        user_friends = self.get_friends()
+        time.sleep(0.5)
+        user_groups = set(self.get_groups())
+        groups_friends = set()
+        quantity = 0
+        for friend in user_friends:
+            time.sleep(0.5)
+            self.user_id = friend
+            try:
+                groups_friend = set(self.get_groups())
+                groups_friends.update(groups_friend)
+            except TypeError:
+                quantity += 1
+        time.sleep(0.5)
+        common_groups = list(user_groups.intersection(groups_friends))
         list_common_groups = []
-        for i in range(len(list_count_user)):
-            if list_count_user[i][1] != 0:
-                params = {
-                    'group_id': list_count_user[i][0],
-                    'fields': 'members_count'
+        time.sleep(0.5)
+        for group in common_groups:
+            time.sleep(0.5)
+            params = {
+                'group_id': group,
+                'fields': 'members_count'
+            }
+            params.update(self.get_params())
+            response = requests.get(
+                'https://api.vk.com/method/groups.getById',
+                params
+            )
+            print('Получение информации о группе https://vk.com/public{},'
+                  ' в которой состоят друзья пользователя'.format(group))
+            try:
+                information_group = response.json()['response'][0]
+                dict_common_groups = {
+                    'name': information_group['name'],
+                    'gid': information_group['id'],
+                    'members_count': information_group['members_count'],
                 }
-                params.update(self.get_params())
-                time.sleep(0.4)
-                response = requests.get(
-                    'https://api.vk.com/method/groups.getById',
-                    params
-                )
-                print('Создание списка групп и получение данных этих групп пользователя'
-                      ' https://vk.com/id{}, в которых есть его друзья'.format(self.user_id))
-                information_groups = response.json()['response'][0]
-                try:
-                    dict_common_groups = {
-                        'name': information_groups['name'],
-                        'gid': information_groups['id'],
-                        'members_count': information_groups['members_count'],
-                    }
-                    list_common_groups.append(dict_common_groups)
-                except KeyError:
-                    dict_common_groups = {
-                        'name': information_groups['name'],
-                        'gid': information_groups['id'],
-                        'members_count': 'Сообщество заблокировано!',
-                    }
-                    list_common_groups.append(dict_common_groups)
-            with open('common_groups.json', 'w', encoding='utf-8') as f:
-                json.dump(list_common_groups, f, ensure_ascii=False, indent=2)
+                list_common_groups.append(dict_common_groups)
+            except KeyError:
+                dict_common_groups = {
+                    'name': information_group['name'],
+                    'gid': information_group['id'],
+                    'members_count': '[no data]',
+                }
+                list_common_groups.append(dict_common_groups)
+        print('У {} пользователя(ей) не получен список групп'.format(quantity))
+        with open('common_groups.json', 'w', encoding='utf-8') as f:
+            json.dump(list_common_groups, f, ensure_ascii=False, indent=2)
         return
 
 
 user = User(TOKEN, user_name)
 print(user)
 user.differences_groups()
-user.common_groups()
+# user.common_groups()
