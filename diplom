@@ -2,23 +2,22 @@ import requests
 # from urllib.parse import urlencode
 import json
 import time
+import sys
 
-APP_ID = 6984668
-BASE_URL = 'https://oauth.vk.com/authorize'
-token = ''
-auth_data = {
-    'client_id': APP_ID,
-    'display': 'page',
-    'scope': 262146,
-    # 'friends' + 'groups' (https://vk.com/dev/permissions)
-    'response_type': 'token',
-    'v': '5.95'
-}
+# APP_ID = 6984668
+# BASE_URL = 'https://oauth.vk.com/authorize'
+# token = ''
+# auth_data = {
+#     'client_id': APP_ID,
+#     'display': 'page',
+#     'scope': 262146,
+#     'response_type': 'token',
+#     'v': '5.95'
+# }
 
 # print('?'.join((BASE_URL, urlencode(auth_data))))
 
-# TOKEN = '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1'
-TOKEN = '44b2f70da0e37bdf719a01f6304cdf59db580d0089955442bf2b61817313556c66463a868177f2d798c74'
+TOKEN = '73eaea320bdc0d3299faa475c196cfea1c4df9da4c6d291633f9fe8f83c08c4de2a3abf89fbc3ed8a44e1'
 
 user_name = input('Введите имя пользователя или его id: ')
 # user_name = 'eshmargunov'
@@ -41,8 +40,12 @@ class User:
                 'https://api.vk.com/method/utils.resolveScreenName',
                 params
             )
-            print('Получение id пользователя из его короткого имени')
-            self.user_id = response.json()['response']['object_id']
+            try:
+                print('Получение id пользователя из его короткого имени')
+                self.user_id = response.json()['response']['object_id']
+            except KeyError:
+                print('У пользователя {} не получен id'.format(self.user_name))
+                sys.exit()
 
     def __str__(self):
         try:
