@@ -1,0 +1,61 @@
+import json
+import wikipedia
+import sys
+import hashlib
+
+
+with open('countries.json', 'r', encoding='utf_8') as file:
+    countries = json.load(file)
+
+
+class Countries:
+    def __init__(self, start=0, end=len(countries)):
+        self.start = start
+        self.end = end
+        with open('pairs.txt', 'w', encoding='utf_8') as write_file:
+            write_file.write('')
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.start > self.end:
+            raise StopIteration
+        if self.start <= self.end:
+            try:
+                country = countries[self.start]["name"]["common"]
+                get_country = wikipedia.page('{} (country)'.format(country))
+                link = get_country.url
+            except wikipedia.exceptions.PageError:
+                country = countries[self.start]["name"]["common"]
+                get_country = wikipedia.page('{}'.format(country))
+                link = get_country.url
+            except IndexError:
+                sys.exit('Index out of range. Reduce the number of requests.')
+        with open('pairs.txt', 'a', encoding='utf_8') as w_file:
+            w_file.write('{} - {};'.format(country, link))
+        self.start += 1
+        return self.start
+
+
+pair = Countries()
+pair = pair.__iter__()
+for i in range(len(countries)):
+    pair.__next__()
+
+
+def get_md5(way, start=0):
+    file_for_md5 = way.split('\\')
+    with open('{}'.format(file_for_md5[-1]), 'r', encoding='utf_8') as read_file:
+        pairs = list(read_file.readline().split(';'))
+    end = len(pairs)
+    while start < end:
+        m = hashlib.md5('{}'.format(pairs[start]).encode('utf_8'))
+        yield m.hexdigest()
+        start += 1
+
+
+md5_hash = get_md5(r"C:\Documents and Settings\384\PycharmProjects\2_1.2_Iterators. Generators. Yield\pairs.txt")
+
+for item in md5_hash:
+    print(item)
