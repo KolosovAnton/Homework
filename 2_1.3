@@ -1,0 +1,61 @@
+import datetime
+import os
+
+working_directory_path = os.getcwd()
+
+
+def write_log(old_function):
+    def new_function(*args, **kwargs):
+        result = old_function(*args, **kwargs)
+        try:
+            text_log = 'дата и время вызова функции - {}\nимя функции - {}\nвозвращаемое значение функции - {}\n' \
+                   'аргументы, с которыми вызвалась функция - {} и {}' \
+                   ''.format(datetime.datetime.now(), old_function.__qualname__, result, *args, **kwargs)
+        except IndexError:
+            text_log = 'дата и время вызова функции - {}\nимя функции - {}\nвозвращаемое значение функции - {}\n' \
+                       'аргумент, с которым вызвалась функция - {}' \
+                       ''.format(datetime.datetime.now(), old_function.__qualname__, result, *args)
+        with open('result.txt', 'w', encoding='utf_8') as file:
+            file.write(text_log)
+        return result
+    return new_function
+
+
+def way_to_write_log(old_function):
+    way_log = input('Введите путь где сохранить лог: ')
+    os.chdir('{}'.format(way_log))
+
+    def new_function(*args, **kwargs):
+        result = old_function(*args, **kwargs)
+        try:
+            text_log = 'дата и время вызова функции - {}\nимя функции - {}\nвозвращаемое значение функции - {}\n' \
+                   'аргументы, с которыми вызвалась функция - {} и {}' \
+                   ''.format(datetime.datetime.now(), old_function.__qualname__, result, *args, **kwargs)
+        except IndexError:
+            text_log = 'дата и время вызова функции - {}\nимя функции - {}\nвозвращаемое значение функции - {}\n' \
+                       'аргумент, с которым вызвалась функция - {}' \
+                       ''.format(datetime.datetime.now(), old_function.__qualname__, result, *args)
+        with open('result.txt', 'w', encoding='utf_8') as file:
+            file.write(text_log)
+        return result
+    return new_function
+
+
+@write_log
+# @way_to_write_log
+def sum_fibonacci_numbers(n):
+    a = [1, 1]
+    sum_fib_num = 0
+    for i in range(0, n):
+        if i <= 1:
+            sum_fib_num += a[i]
+            continue
+        a.insert(i, 0)
+        a[i] = int(a[i-1]) + int(a[i-2])
+        sum_fib_num += a[i]
+    return sum_fib_num
+
+
+sum_fibonacci_numbers(10)
+
+os.chdir('{}'.format(working_directory_path))
