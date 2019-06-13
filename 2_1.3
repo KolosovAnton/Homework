@@ -2,50 +2,38 @@ import datetime
 import os
 
 working_directory_path = os.getcwd()
+way_log = input('Введите путь где сохранить лог: ')
 
 
-def write_log(old_function):
-    def new_function(*args, **kwargs):
-        result = old_function(*args, **kwargs)
-        try:
+def way_to_write_log(way_log):
+
+    def write_log(old_function):
+        def new_function(*args, **kwargs):
+            date_time = datetime.datetime.now()
+            result = old_function(*args, **kwargs)
+            name = old_function.__name__
+            arg = []
+            if args:
+                arg.append(', '.join(repr(arg) for arg in args))
+            if kwargs:
+                for add_name, add_value in kwargs.items():
+                    pairs = ['{} = {}'.format(add_name, add_value)]
+                    arg.append(', '.join(pairs))
+            arg_str = ', '.join(arg)
             text_log = 'дата и время вызова функции - {}\nимя функции - {}\nвозвращаемое значение функции - {}\n' \
-                   'аргументы, с которыми вызвалась функция - {} и {}' \
-                   ''.format(datetime.datetime.now(), old_function.__qualname__, result, *args, **kwargs)
-        except IndexError:
-            text_log = 'дата и время вызова функции - {}\nимя функции - {}\nвозвращаемое значение функции - {}\n' \
-                       'аргумент, с которым вызвалась функция - {}' \
-                       ''.format(datetime.datetime.now(), old_function.__qualname__, result, *args)
-        with open('result.txt', 'w', encoding='utf_8') as file:
-            file.write(text_log)
-        return result
-    return new_function
+                       'аргументы, с которыми вызвалась функция - {}'.format(date_time, name, result, arg_str)
+            with open(r'{}\result.txt'.format(way_log), 'w', encoding='utf_8') as file:
+                file.write(text_log)
+            return result
+        return new_function
+    return write_log
 
 
-def way_to_write_log(old_function):
-    way_log = input('Введите путь где сохранить лог: ')
-    os.chdir('{}'.format(way_log))
-
-    def new_function(*args, **kwargs):
-        result = old_function(*args, **kwargs)
-        try:
-            text_log = 'дата и время вызова функции - {}\nимя функции - {}\nвозвращаемое значение функции - {}\n' \
-                   'аргументы, с которыми вызвалась функция - {} и {}' \
-                   ''.format(datetime.datetime.now(), old_function.__qualname__, result, *args, **kwargs)
-        except IndexError:
-            text_log = 'дата и время вызова функции - {}\nимя функции - {}\nвозвращаемое значение функции - {}\n' \
-                       'аргумент, с которым вызвалась функция - {}' \
-                       ''.format(datetime.datetime.now(), old_function.__qualname__, result, *args)
-        with open('result.txt', 'w', encoding='utf_8') as file:
-            file.write(text_log)
-        return result
-    return new_function
-
-
-@write_log
-# @way_to_write_log
-def sum_fibonacci_numbers(n):
+@way_to_write_log('{}'.format(way_log))
+def sum_fibonacci_numbers(n, j):
     a = [1, 1]
     sum_fib_num = 0
+    print(j)
     for i in range(0, n):
         if i <= 1:
             sum_fib_num += a[i]
@@ -56,6 +44,6 @@ def sum_fibonacci_numbers(n):
     return sum_fib_num
 
 
-sum_fibonacci_numbers(10)
+sum_fibonacci_numbers(5)
 
 os.chdir('{}'.format(working_directory_path))
