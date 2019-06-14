@@ -1,0 +1,94 @@
+from pprint import pprint
+contacts = []
+
+
+class Contact:
+    def __init__(self, name, last_name, tel_number, favorite=False, *args, **kwargs):
+        self.name = name
+        self.last_name = last_name
+        self.tel_number = tel_number
+        self.favorite = favorite
+        arg = []
+        if args:
+            arg.append(', '.join(repr(arg) for arg in args))
+        self.arg = arg
+        kwarg = []
+        if kwargs:
+            for add_info_name, add_info_value in kwargs.items():
+                pairs = ['{}: {}'.format(add_info_name, add_info_value)]
+                kwarg.append('\n\t'.join(pairs))
+        self.kwarg = '\n\t'.join(kwarg)
+
+    def __str__(self):
+        if self.favorite:
+            self.favorite = 'да'
+        else:
+            self.favorite = 'нет'
+        if self.arg == []:
+            data = ('Имя: {}\nФамилия: {}\nТелефон: {}\nВ избранных: {}\nДополнительная информация:\n\t{}'
+                    ''.format(self.name, self.last_name, self.tel_number, self.favorite, self.kwarg))
+        else:
+            data = ('Имя: {}\nФамилия: {}\nТелефон: {}\nВ избранных: {}\nДополнительные номера: {}\n'
+                    'Дополнительная информация:\n\t{}'.format(self.name, self.last_name, self.tel_number,
+                                                              self.favorite, self.arg, self.kwarg))
+        return data
+
+
+class PhoneBook:
+    def __init__(self, name_phonebook):
+        self.name_phonebook = name_phonebook
+        self.contacts = contacts
+
+    def __str__(self):
+        return self.name_phonebook
+
+    def all_contacts(self):
+        return pprint(self.contacts)
+
+    def add_contact(self, cont):
+        new_contact = cont.__str__().split('\n')
+        add_cont = {}
+        for item in new_contact:
+            item = item.split(':')
+            dict_cont = {
+                item[0]: item[1]
+            }
+            add_cont.update(dict_cont)
+        self.contacts.append(add_cont)
+        pprint(self.contacts)
+        return
+
+    def del_contact(self, del_number):
+        for contact in self.contacts:
+            if del_number in contact['Телефон']:
+                self.contacts.remove(contact)
+        print(self.contacts)
+        return
+
+    def search_contact(self, name, last_name):
+        for contact in self.contacts:
+            if name in contact['Имя'] and last_name in contact['Фамилия']:
+                print(contact)
+        return
+
+    def search_favorite_contact(self):
+        for contact in self.contacts:
+            if 'да' in contact['В избранных']:
+                print(contact)
+        return
+
+
+jhon = Contact('Jhon', 'Smith', '+71234567809', telegram='@jhony', email='jhony@smith.com')
+
+print(jhon)
+
+j = Contact('J', 'Smith', '+71234567811', True, email='j@smith.com')
+
+first = PhoneBook('1')
+print(first)
+print(first.add_contact(j))
+print(first.add_contact(jhon))
+print(first.all_contacts())
+print(first.search_favorite_contact())
+print(first.search_contact('Jhon', 'Smith'))
+print(first.del_contact('+71234567811'))
