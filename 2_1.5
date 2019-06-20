@@ -5,51 +5,54 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 
+class Email:
+    def __init__(self, login, password, SMTP='smtp.gmail.com', IMAP='imap.gmail.com', header=None):
+        self.SMTP = SMTP
+        self.IMAP = IMAP
+        self.login = login
+        self.password = password
+        self.header = header
+    
+    def send_mail(self, subject, recipients, message):
+        msg = MIMEMultipart()
+        msg['From'] = self.login
+        msg['To'] = ', '.join(recipients)
+        msg['Subject'] = subject
+        msg.attach(MIMEText(message))
+        ms = smtplib.SMTP(self.SMTP, 587)
+        # identify ourselves to smtp gmail client
+        ms.ehlo()            
+        # secure our email with tls encryption
+        ms.starttls()
+        # re-identify ourselves as an encrypted connection
+        ms.ehlo()
+        ms.login(self.login, self.password)
+        ms.send_message(msg)
+        ms.quit()
+
+    def recieve(self):
+        mail = imaplib.IMAP4_SSL(self.IMAP)
+        mail.login(self.login, self.password)
+        mail.list()
+        mail.select("inbox")
+        if self.header:
+            criterion = '(HEADER Subject "{}")'.format(self.header)
+        else:
+            criterion = '(HEADER Subject "ALL")'
+        result, data = mail.uid('search', None, criterion)
+        assert data[0], 'There are no letters with current header'
+        latest_email_uid = data[0].split()[-1]
+        result, data = mail.uid('fetch', latest_email_uid, '(RFC822)')
+        raw_email = data[0][1]
+        email_message = email.message_from_bytes(raw_email)
+        print(email_message['Subject'])
+        print(email_message['From'])
+        print(email_message['To'])
+        print(email_message['Date'])
+        mail.logout()
+
+
 if __name__ == '__main__':
-    class Email:
-        def __init__(self, login, password, SMTP='smtp.gmail.com', IMAP='imap.gmail.com', header=None):
-            self.SMTP = SMTP
-            self.IMAP = IMAP
-            self.login = login
-            self.password = password
-            self.header = header
-
-        def send_mail(self, subject, recipients, message):
-            msg = MIMEMultipart()
-            msg['From'] = self.login
-            msg['To'] = ', '.join(recipients)
-            msg['Subject'] = subject
-            msg.attach(MIMEText(message))
-            ms = smtplib.SMTP(self.SMTP, 587)
-            # identify ourselves to smtp gmail client
-            ms.ehlo()
-            # secure our email with tls encryption
-            ms.starttls()
-            # re-identify ourselves as an encrypted connection
-            ms.ehlo()
-            ms.login(self.login, self.password)
-            ms.send_message(msg)
-            ms.quit()
-
-        def recieve(self):
-            mail = imaplib.IMAP4_SSL(self.IMAP)
-            mail.login(self.login, self.password)
-            mail.list()
-            mail.select("inbox")
-            criterion = '(HEADER Subject "{}")'.format(self.header if self.header else 'ALL')
-            result, data = mail.uid('search', None, criterion)
-            assert data[0], 'There are no letters with current header'
-            latest_email_uid = data[0].split()[-1]
-            result, data = mail.uid('fetch', latest_email_uid, '(RFC822)')
-            raw_email = data[0][1]
-            email_message = email.message_from_bytes(raw_email)
-            print(email_message['Subject'])
-            print(email_message['From'])
-            print(email_message['To'])
-            print(email_message['Date'])
-            mail.logout()
-
-
     mail_message = Email('login@gmail.com', 'qwerty')
     mail_message.send_mail('Subject', ['vasya@email.com', 'petya@email.com'], 'Message')
     mail_message.recieve()
