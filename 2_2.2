@@ -1,0 +1,43 @@
+import re
+import csv
+
+with open('phonebook_raw.csv', encoding='utf-8') as f:
+    rows = csv.reader(f, delimiter=',')
+    contacts_list = list(rows)
+
+headers = contacts_list.pop(0)
+
+phone_pattern = r'(8|\+7)?\s*(\s*|\()(\d{3})(\s*|\))(\s*|\-)(\d{3})(\s*|\-)' \
+                r'(\d{2})(\s*|\-)(\d{2})((\s*(\(|\s*)([а-яё]+\.)\s*(\d+)(\)|\s*))|\s*)'
+text_pattern = '[\w]+'
+
+phonebook = {'headers': headers}
+
+for contact in contacts_list:
+    text = contact[0] + ' ' + contact[1] + ' ' + contact[2]
+    text_result = re.findall(text_pattern, text, re.U)
+    try:
+        lastname = text_result[0]
+        firstname = text_result[1]
+        surname = text_result[2]
+    except IndexError:
+        surname = ''
+    phone_result = re.sub(phone_pattern, r'+7(\3)\6-\8-\10 \14\15', contact[5])
+    if phone_result.endswith(' '):
+        phone_result = phone_result[:-1]
+    contact_dict = {
+        '{}'.format(lastname): (['{}'.format(lastname), '{}'.format(firstname), '{}'.format(surname),
+                                 '{}'.format(contact[3]), '{}'.format(contact[4]), '{}'.format(phone_result),
+                                 '{}'.format(contact[6])])
+    }
+    if lastname in phonebook.keys():
+        for i in range(len(contact_dict[lastname])):
+            if contact_dict[lastname][i] != '':
+                phonebook[lastname].pop(i)
+                phonebook[lastname].insert(i, contact_dict[lastname][i])
+    else:
+        phonebook.update(contact_dict)
+
+with open('phonebook.csv', 'w', encoding='utf-8') as f:
+    datawriter = csv.writer(f, delimiter=',')
+    datawriter.writerows(phonebook.values())
