@@ -1,0 +1,27 @@
+import psycopg2
+
+con = psycopg2.connect(dbname='postgres',
+                       user='postgres',
+                       host='localhost',
+                       password='1922')
+con.autocommit = True
+cur = con.cursor()
+user_name = 'anton_user'
+cur.execute("CREATE ROLE %s with password '1922' ;" % user_name)
+# records = cur.fetchall()
+# print(records)
+cur.close()
+con.close()
+con = psycopg2.connect(dbname='postgres',
+                       user='anton_user',
+                       host='localhost',
+                       password='1922'
+                       )
+con.autocommit = True
+cur = con.cursor()
+db_name = 'anton_db'
+cur.execute("CREATE DATABASE %s  ;" % db_name)
+# records = cur.fetchall()
+# print(records)
+cur.close()
+con.close()
