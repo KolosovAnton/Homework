@@ -4,12 +4,11 @@ import time
 
 
 def create_netology_user():
-    # password = input('Введите пароль для подключения к PostgreSQL: ')
+    password = input('Введите пароль для подключения к PostgreSQL: ')
     conn = psycopg2.connect(dbname='postgres',
                             user='postgres',
                             host='localhost',
-                            password='1922')
-                            # password=password)
+                            password=password)
     conn.autocommit = True
     cur = conn.cursor()
     user_name = 'netology_user'
@@ -17,11 +16,11 @@ def create_netology_user():
 
 
 def create_netology_db():
-    # password = input('Введите пароль для подключения к PostgreSQL: ')
+    password = input('Введите пароль для подключения к PostgreSQL: ')
     con = psycopg2.connect(dbname='postgres',
                             user='postgres',
-                            password='1922')
-                            # password=password)
+                            host='localhost',
+                            password=password)
     con.autocommit = True
     cur = con.cursor()
     db_name = 'netology_db'
