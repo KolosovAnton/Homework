@@ -1,0 +1,181 @@
+import psycopg2
+from datetime import datetime, timedelta
+import time
+
+
+def create_netology_user():
+    # password = input('Введите пароль для подключения к PostgreSQL: ')
+    conn = psycopg2.connect(dbname='postgres',
+                            user='postgres',
+                            host='localhost',
+                            password='1922')
+                            # password=password)
+    conn.autocommit = True
+    cur = conn.cursor()
+    user_name = 'netology_user'
+    cur.execute("CREATE ROLE %s WITH CREATEDB LOGIN PASSWORD '1922';" % user_name)
+
+
+def create_netology_db():
+    # password = input('Введите пароль для подключения к PostgreSQL: ')
+    con = psycopg2.connect(dbname='postgres',
+                            user='postgres',
+                            password='1922')
+                            # password=password)
+    con.autocommit = True
+    cur = con.cursor()
+    db_name = 'netology_db'
+    cur.execute("CREATE DATABASE %s OWNER netology_user;" % db_name)
+
+
+def create_db(table_name, **kwargs):
+    kwarg = {}
+    if kwargs:
+        for add_name, add_type in kwargs.items():
+            pairs = {f'{add_name}': f'{add_type}'}
+            kwarg.update(pairs)
+    expression = 'CREATE TABLE %s (' % table_name
+    for key, value in kwarg.items():
+        expression += key
+        expression += ' '
+        expression += value
+        expression += ', '
+    expression = expression[:-2]
+    expression += ');'
+    conn = psycopg2.connect(dbname='netology_db',
+                            user='netology_user',
+                            password='1922')
+    cur = conn.cursor()
+    cur.execute('%s' % expression)
+    conn.commit()
+
+
+def add_student(student, **kwargs):
+    key = str()
+    value = str()
+    if kwargs:
+        for add_name, add_type in kwargs.items():
+            key += "%s" % add_name
+            key += ', '
+            value += "'%s'" % add_type
+            value += ', '
+    key = key[:-2]
+    value = value[:-2]
+    expression = "insert into student (name, %s) values ('%s', %s)" % (key, student, value)
+    conn = psycopg2.connect(dbname='netology_db',
+                            user='netology_user',
+                            password='1922')
+    cur = conn.cursor()
+    cur.execute('%s' % expression)
+    conn.commit()
+
+
+def add_students(course_id, students, **kwargs):
+    key = str()
+    value = str()
+    if kwargs:
+        for add_name, add_type in kwargs.items():
+            key += "%s" % add_name
+            key += ', '
+            value += "'%s'" % add_type
+            value += ', '
+    key = key[:-2]
+    value = value[:-2]
+    expression = "insert into course (%s) values (%s)" % (key, value)
+    conn = psycopg2.connect(dbname='netology_db',
+                            user='netology_user',
+                            password='1922')
+    cur = conn.cursor()
+    cur.execute('%s' % expression)
+    conn.commit()
+    time.sleep(5)
+    for student in students:
+        conn = psycopg2.connect(dbname='netology_db',
+                                user='netology_user',
+                                password='1922')
+        cur = conn.cursor()
+        cur.execute("select id from student where name = '%s'" % student)
+        student_id = cur.fetchall()
+        expression = "insert into student_course (student_id, course_id)" \
+                     " values (%s, %s)" % (student_id[0][0], course_id)
+        conn = psycopg2.connect(dbname='netology_db',
+                                user='netology_user',
+                                password='1922')
+        cur = conn.cursor()
+        cur.execute('%s' % expression)
+        conn.commit()
+
+
+def get_students(course_id):
+    conn = psycopg2.connect(dbname='netology_db',
+                            user='netology_user',
+                            password='1922')
+    cur = conn.cursor()
+    cur.execute('select student_id from student_course where course_id = %s' % course_id)
+    result = cur.fetchall()
+    text = []
+    for i in range(len(result)):
+        student_id = result[i][0]
+        conn1 = psycopg2.connect(dbname='netology_db',
+                                user='netology_user',
+                                password='1922')
+        cur1 = conn1.cursor()
+        cur1.execute('select * from student where id = %s' % student_id)
+        student = cur1.fetchall()
+        text.append(student)
+    print(text)
+
+
+def get_student(student_id):
+    conn = psycopg2.connect(dbname='netology_db',
+                            user='netology_user',
+                            password='1922')
+    cur = conn.cursor()
+    cur.execute('select * from student where id = %s' % student_id)
+    print(cur.fetchall())
+
+
+# create_user & create_db
+create_netology_user()
+create_netology_db()
+time.sleep(3)
+
+# create_db(table_name, **kwargs)
+create_db('student', id='serial PRIMARY KEY NOT NULL',
+          name='varchar(100) NOT NULL',
+          gpa='numeric(10, 2)',
+          birth='timestamp with time zone')
+create_db('course', id='serial PRIMARY KEY NOT NULL',
+          name='varchar(100) NOT NULL')
+create_db('student_course', id='serial PRIMARY KEY NOT NULL',
+          student_id='INTEGER REFERENCES student(id) NOT NULL',
+          course_id='INTEGER REFERENCES course(id) NOT NULL')
+time.sleep(3)
+
+# add_student(student, **kwargs)
+Andy_birth = datetime.now() - timedelta(days=365*18)
+add_student('Andy Py', gpa=4.2, birth=Andy_birth)
+
+Joe_birth = datetime.now() - timedelta(days=365*18-80)
+add_student('Joe Rod', gpa=4.8, birth=Joe_birth)
+
+Barbara_birth = datetime.now() - timedelta(days=365*18+165)
+add_student('Barbara Tow', gpa=4, birth=Barbara_birth)
+time.sleep(3)
+
+# add_students(course_id, students, **kwargs)
+add_students(1, ['Andy Py', 'Joe Rod'], name='Python')
+add_students(2, ['Andy Py', 'Barbara Tow'], name='Django')
+add_students(3, ['Joe Rod', 'Barbara Tow'], name='PHP')
+time.sleep(3)
+
+# get_students(course_id)
+get_students(1)
+get_students(2)
+get_students(3)
+time.sleep(3)
+
+# get_student(student_id)
+get_student(1)
+get_student(2)
+get_student(3)
