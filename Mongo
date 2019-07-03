@@ -1,0 +1,71 @@
+import csv
+import re
+from datetime import datetime
+from pymongo import MongoClient
+from pprint import pprint
+
+client = MongoClient()
+netology_db = client['netology']
+
+
+def read_data(csv_file, db):
+    """
+    Загрузить данные в бд из CSV-файла
+    """
+    with open(csv_file, encoding='utf8') as csvfile:
+        reader = csv.DictReader(csvfile, delimiter='\t')
+        tickets = []
+        for line in reader:
+            line['Дата'] += '.2019'
+            ticket_dict = {}
+            for key, value in line.items():
+                if key.endswith(' '):
+                    key = key[:-1]
+                if value.endswith(' '):
+                    value = value[:-1]
+                ticket_dict[key] = value
+            concert_date = datetime.strptime(ticket_dict['Дата'], '%d.%m.%Y')
+            ticket_dict['Дата'] = concert_date
+            price = int(ticket_dict['Цена'])
+            ticket_dict['Цена'] = price
+            tickets.append(ticket_dict)
+    ticket_collection = netology_db[db]
+    for ticket in tickets:
+        ticket_collection.insert_one(ticket)
+
+
+def find_cheapest(db):
+    """
+    Отсортировать билеты из базы по возрастания цены
+    Документация: https://docs.mongodb.com/manual/reference/method/cursor.sort/
+    """
+    ticket_collection = netology_db[db]
+    pprint(list(ticket_collection.find().sort('Цена', 1)))
+
+
+def find_by_name(name, db):
+    """
+    Найти билеты по имени исполнителя (в том числе – по подстроке),
+    и вернуть их по возрастанию цены
+    """
+    ticket_collection = netology_db[db]
+    regex = re.compile(f'{name}', re.I)
+    pprint(list(ticket_collection.find({'Исполнитель': regex}).sort('Цена', 1)))
+
+
+def find_in_period(start, end, db):
+    """
+    Отсортировать билеты из базы найденные в период [date_start - date_end]
+    """
+    start_date = datetime.strptime(start, '%d.%m.%Y')
+    end_date = datetime.strptime(end, '%d.%m.%Y')
+    ticket_collection = netology_db[db]
+    pprint(list(ticket_collection.find({"Дата": {'$gte': start_date, '$lte': end_date}}).sort('Дата', 1)))
+
+
+if __name__ == '__main__':
+    read_data('artists.csv', 'tickets')
+    find_cheapest('tickets')
+    find_by_name('i', 'tickets')
+    find_by_name('a', 'tickets')
+    find_in_period('01.07.2019', '30.07.2019', 'tickets')
